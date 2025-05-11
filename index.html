@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Risultati Live Partite</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 20px; }
+    h1, h2 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <h1>Risultati Live Partite</h1>
+
+  <h2>Classifica</h2>
+  <table id="classifica">
+    <thead>
+      <tr>
+        <th>Squadra</th>
+        <th>Punti</th>
+        <th>Gol Fatti</th>
+        <th>Gol Subiti</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>Tabellone Partite</h2>
+  <table id="tabellone">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Squadra A</th>
+        <th>Gol A</th>
+        <th>Gol B</th>
+        <th>Squadra B</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    fetch('partite.json')
+      .then(res => res.json())
+      .then(data => {
+        const stats = {};
+
+        // Calcolo classifica
+        data.forEach(p => {
+          const { squadraA, squadraB, golA, golB } = p;
+
+          if (!stats[squadraA]) stats[squadraA] = { punti: 0, gf: 0, gs: 0 };
+          if (!stats[squadraB]) stats[squadraB] = { punti: 0, gf: 0, gs: 0 };
+
+          stats[squadraA].gf += golA;
+          stats[squadraA].gs += golB;
+
+          stats[squadraB].gf += golB;
+          stats[squadraB].gs += golA;
+
+          if (golA > golB) stats[squadraA].punti += 3;
+          else if (golA < golB) stats[squadraB].punti += 3;
+          else {
+            stats[squadraA].punti += 1;
+            stats[squadraB].punti += 1;
+          }
+        });
+
+        // Ordina classifica
+        const classifica = Object.entries(stats)
+          .map(([squadra, dati]) => ({ squadra, ...dati }))
+          .sort((a, b) => b.punti - a.punti || (b.gf - b.gs) - (a.gf - a.gs));
+
+        // Mostra classifica
+        const classificaBody = document.querySelector('#classifica tbody');
+        classifica.forEach(r => {
+          const row = `<tr><td>${r.squadra}</td><td>${r.punti}</td><td>${r.gf}</td><td>${r.gs}</td></tr>`;
+          classificaBody.innerHTML += row;
+        });
+
+        // Mostra tabellone
+        const tabelloneBody = document.querySelector('#tabellone tbody');
+        data.forEach(p => {
+          const row = `<tr><td>${p.data}</td><td>${p.squadraA}</td><td>${p.golA}</td><td>${p.golB}</td><td>${p.squadraB}</td></tr>`;
+          tabelloneBody.innerHTML += row;
+        });
+      });
+  </script>
+</body>
+</html>
